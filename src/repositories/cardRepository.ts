@@ -67,6 +67,20 @@ export async function findByCardDetails(
   return result.rows[0];
 }
 
+export async function findEmployeeAndCompany(
+  apiKey: string,
+  employeeId: number
+) {
+  const result = await connection.query(`
+  SELECT c."apiKey", e."fullName"
+  FROM companies c
+  JOIN employees e ON e."companyId" = c.id 
+  WHERE c."apiKey" = $1 AND e.id = $2
+`, [apiKey, employeeId]);
+
+  return result.rows[0];
+}
+
 export async function insert(cardData: CardInsertData) {
   const {
     employeeId,
