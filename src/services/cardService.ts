@@ -179,7 +179,7 @@ export async function blockCard(id: number, password: string) {
     const cryptr = new Cryptr(process.env.CRYPTR_KEY);
     const decryptedPassword = cryptr.decrypt(card.password);
     console.log('decryptedpass', decryptedPassword)
-    
+
     if (decryptedPassword !== password) {
         throw {
             type: "unauthorized",
@@ -197,4 +197,31 @@ export async function blockCard(id: number, password: string) {
   
     await cardRepository.update(id, {isBlocked: true});  
     return {status: "blocked"};
+}
+
+export async function unlockCard(id: number, password: string) {
+    const card = await findCard(id);
+    await validateExpirationDate(card);
+
+    if (!card.isBlocked) {
+        throw {
+            type: "unauthorized",
+            message: "card is already blocked"
+        };         
+    }
+
+    const cryptr = new Cryptr(process.env.CRYPTR_KEY);
+    const decryptedPassword = cryptr.decrypt(card.password);
+    console.log('decryptedpass', decryptedPassword)
+
+    if (decryptedPassword !== password) {
+        throw {
+            type: "unauthorized",
+            message: "incorrect data"
+        };
+        
+    } 
+  
+    await cardRepository.update(id, {isBlocked: false});  
+    return {status: "unlocked"};
 }
