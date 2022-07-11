@@ -2,6 +2,8 @@ import dayjs from "dayjs";
 import Cryptr from "cryptr";
 import { faker } from '@faker-js/faker';
 import * as cardRepository from "../repositories/cardRepository.js";
+import * as paymentRepository from "../repositories/paymentRepository.js";
+import * as rechargeRepository from "../repositories/rechargeRepository.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -128,4 +130,32 @@ export async function activateCard(cardId: number, CVC: number, password: string
     await validateCVC(CVC, card);
     const result = await updatePassword(password, cardId);
     return result;
+}
+
+export async function getTransactions(id: number) {
+    const transactions = await paymentRepository.findByCardId(id);
+    const recharges = await rechargeRepository.findByCardId(id);
+    const card = await cardRepository.findById(id);
+    if (!card) {
+        throw {
+            type: "not found",
+            message: "card not found"
+        };        
+    }
+
+    let cont1 = 0;
+    recharges.forEach(recharge =>{
+         return cont1 += recharge.amount;
+    })
+
+    let cont2 = 0;
+    transactions.forEach(t =>{
+         return cont2 += t.amount;
+    })
+
+    return {
+        balance: cont1 - cont2,
+        transactions,
+        recharges
+    };
 }

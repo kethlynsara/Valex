@@ -14,3 +14,13 @@ export async function activateCard(req: Request, res: Response) {
     const result = await cardService.activateCard(cardId, CVC, password);
     res.send(result);
 }
+
+export async function getTransactions(req: Request, res: Response) {
+    const { id } = req.params;
+    if (!id) {
+        return res.sendStatus(401);
+    }
+
+    const result = await cardService.getTransactions(parseInt(id));
+    res.send(result);
+}
