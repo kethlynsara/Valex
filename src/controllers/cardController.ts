@@ -24,3 +24,15 @@ export async function getTransactions(req: Request, res: Response) {
     const result = await cardService.getTransactions(parseInt(id));
     res.send(result);
 }
+
+export async function blockCard(req: Request, res: Response) {
+    const { id } = req.params;
+    const { password }: {password: string} = req.body;
+    console.log('id', id)
+    if (!id) {
+        return res.sendStatus(401);
+    }
+
+    const result = await cardService.blockCard(parseInt(id), password);
+    res.send(result);
+}
