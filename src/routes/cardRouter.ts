@@ -6,7 +6,7 @@ const cardRouter = Router();
 
 cardRouter.get("/card-transactions/:id", getTransactions);
 cardRouter.post("/card", validateData, createCard);
-cardRouter.post("/activate-card", validateActivateCardData ,activateCard);
+cardRouter.post("/activate-card", validateActivateCardData, activateCard);
 cardRouter.post("/block-card/:id", blockCard);
 cardRouter.post("/unlock-card/:id", unlockCard);
 

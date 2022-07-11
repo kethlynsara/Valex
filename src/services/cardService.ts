@@ -36,20 +36,6 @@ async function encrypt(string: string) {
     return encryptedString;
 }
 
-// async function decrypt(info: any, card: cardRepository.Card) {
-//     const cryptr = new Cryptr(process.env.CRYPTR_KEY);
-//     const decryptedCVC = cryptr.decrypt(card.securityCode);
-//     console.log('decryptedCVC', decryptedCVC)
-//     if (parseInt(decryptedCVC) !== info) {
-//         throw {
-//             type: "unauthorized",
-//             message: "incorrect data"
-//         };
-        
-//     }
-//     return true;
-// }
-
 export async function createCardInfo(fullName: string) {
     const number = faker.finance.creditCardNumber('');
     const array = fullName.split(" ");
@@ -90,7 +76,7 @@ export async function createCard(apiKey: string, employeeId: number, type: cardR
     return result;
 }
 
-async function findCard(id: number) {
+export async function findCard(id: number) {
     const card = await cardRepository.findById(id);
     if (!card) {
         throw {
@@ -101,7 +87,7 @@ async function findCard(id: number) {
     return card;
 }
 
-async function updatePassword(password: string, cardId: number) {
+export async function updatePassword(password: string, cardId: number) {
     if (password.length === 4) {
         const encrypedPassword = await encrypt(password);
         await cardRepository.update(cardId, {password: encrypedPassword});     
@@ -114,7 +100,7 @@ async function updatePassword(password: string, cardId: number) {
     }
 }
 
-async function validateExpirationDate(card: cardRepository.Card) {
+export async function validateExpirationDate(card: cardRepository.Card) {
     const todaysDate = dayjs().format("MM-YYYY").toString();
     if (card.expirationDate < todaysDate) {
         throw {
