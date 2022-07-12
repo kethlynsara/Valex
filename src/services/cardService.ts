@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import Cryptr from "cryptr";
 import { faker } from '@faker-js/faker';
+import * as utils from "../utils/sqlUtils.js"; 
 import * as cardRepository from "../repositories/cardRepository.js";
 import * as paymentRepository from "../repositories/paymentRepository.js";
 import * as rechargeRepository from "../repositories/rechargeRepository.js";
@@ -34,19 +35,6 @@ async function encrypt(string: string) {
     const cryptr = new Cryptr(process.env.CRYPTR_KEY);
     const encryptedString = cryptr.encrypt(string);
     return encryptedString;
-}
-
-export async function decrypt(info: any, compareInfo: string) {
-    const cryptr = new Cryptr(process.env.CRYPTR_KEY);
-    const decryptedInfo = cryptr.decrypt(compareInfo);
-    console.log('decryptedInfo', decryptedInfo)
-    if (decryptedInfo != info) {
-        throw {
-            type: "unauthorized",
-            message: "incorrect data"
-        };        
-    }
-    return true;
 }
 
 async function getCardFullName(fullName: string) {
@@ -117,17 +105,6 @@ export async function updatePassword(password: string, cardId: number) {
     }
 }
 
-export async function validateExpirationDate(card: cardRepository.Card) {
-    const todaysDate = dayjs().format("MM-YYYY").toString();
-    if (card.expirationDate < todaysDate) {
-        throw {
-            type: "unauthorized",
-            message: "incorrect data"
-        };  
-    }
-    return true;
-}
-
 export async function validateCardActivation(card: cardRepository.Card) {
     if (card.password) {
         throw {
@@ -140,34 +117,19 @@ export async function validateCardActivation(card: cardRepository.Card) {
 
 export async function activateCard(cardId: number, CVC: number, password: string) {
     const card = await findCard(cardId);
-    await validateExpirationDate(card);
+    await utils.validateExpirationDate(card);
     await validateCardActivation(card);
-    await decrypt(CVC, card.securityCode);    
+    await utils.decrypt(CVC, card.securityCode);    
     const result = await updatePassword(password, cardId);
     return result;
-}
-
-export async function getBalance(recharges: any, transactions: any) {
-    let cont1 = 0;
-    recharges.forEach(recharge =>{
-         return cont1 += recharge.amount;
-    })
-
-    let cont2 = 0;
-    transactions.forEach(t =>{
-         return cont2 += t.amount;
-    })
-
-    const balance = cont1 - cont2;
-    return balance;
 }
 
 export async function getTransactions(id: number) {
     const transactions = await paymentRepository.findByCardId(id);
     const recharges = await rechargeRepository.findByCardId(id);
     const card = await findCard(id);
-    await validateExpirationDate(card);
-    const balance  = await getBalance(recharges, transactions);
+    await utils.validateExpirationDate(card);
+    const balance  = await utils.getBalance(recharges, transactions);
 
     return {
         balance,
@@ -178,32 +140,25 @@ export async function getTransactions(id: number) {
 
 export async function blockCard(id: number, password: string) {
     const card = await findCard(id);
-    await validateExpirationDate(card);
-    await decrypt(password, card.password);
-    
-    if (card.isBlocked) {
-        throw {
-            type: "unauthorized",
-            message: "card is already blocked"
-        };         
-    }
-  
+    await utils.validateExpirationDate(card);
+    await utils.decrypt(password, card.password);
+    await utils.checkCardBlock(card.isBlocked);  
     await cardRepository.update(id, {isBlocked: true});  
     return {status: "blocked"};
 }
 
 export async function unlockCard(id: number, password: string) {
     const card = await findCard(id);
-    await validateExpirationDate(card);
+    await utils.validateExpirationDate(card);
 
     if (!card.isBlocked) {
         throw {
             type: "unauthorized",
-            message: "card is already blocked"
+            message: "card isn't blocked"
         };         
     }
 
-    await decrypt(password, card.password);  
+    await utils.decrypt(password, card.password);  
     await cardRepository.update(id, {isBlocked: false});  
     return {status: "unlocked"};
 }
