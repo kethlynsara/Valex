@@ -36,6 +36,19 @@ async function encrypt(string: string) {
     return encryptedString;
 }
 
+export async function decrypt(info: any, compareInfo: string) {
+    const cryptr = new Cryptr(process.env.CRYPTR_KEY);
+    const decryptedInfo = cryptr.decrypt(compareInfo);
+    console.log('decryptedInfo', decryptedInfo)
+    if (decryptedInfo != info) {
+        throw {
+            type: "unauthorized",
+            message: "incorrect data"
+        };        
+    }
+    return true;
+}
+
 async function getCardFullName(fullName: string) {
     const array = fullName.split(" ");
     for (let i = 1; i < array.length - 1; i++) {
@@ -115,36 +128,26 @@ export async function validateExpirationDate(card: cardRepository.Card) {
     return true;
 }
 
-export async function activateCard(cardId: number, CVC: number, password: string) {
-    const card = await findCard(cardId);
-    await validateExpirationDate(card);
+export async function validateCardActivation(card: cardRepository.Card) {
     if (card.password) {
         throw {
             type: "unauthorized",
             message: "card is already active"
         };  
     }
+    return true;
+}
 
-    const cryptr = new Cryptr(process.env.CRYPTR_KEY);
-    const decryptedCVC = cryptr.decrypt(card.securityCode);
-    console.log('decryptedCVC', decryptedCVC)
-    if (parseInt(decryptedCVC) !== CVC) {
-        throw {
-            type: "unauthorized",
-            message: "incorrect data"
-        };
-        
-    }
+export async function activateCard(cardId: number, CVC: number, password: string) {
+    const card = await findCard(cardId);
+    await validateExpirationDate(card);
+    await validateCardActivation(card);
+    await decrypt(CVC, card.securityCode);    
     const result = await updatePassword(password, cardId);
     return result;
 }
 
-export async function getTransactions(id: number) {
-    const transactions = await paymentRepository.findByCardId(id);
-    const recharges = await rechargeRepository.findByCardId(id);
-    const card = await findCard(id);
-    await validateExpirationDate(card);
-
+export async function getBalance(recharges: any, transactions: any) {
     let cont1 = 0;
     recharges.forEach(recharge =>{
          return cont1 += recharge.amount;
@@ -155,8 +158,19 @@ export async function getTransactions(id: number) {
          return cont2 += t.amount;
     })
 
+    const balance = cont1 - cont2;
+    return balance;
+}
+
+export async function getTransactions(id: number) {
+    const transactions = await paymentRepository.findByCardId(id);
+    const recharges = await rechargeRepository.findByCardId(id);
+    const card = await findCard(id);
+    await validateExpirationDate(card);
+    const balance  = await getBalance(recharges, transactions);
+
     return {
-        balance: cont1 - cont2,
+        balance,
         transactions,
         recharges
     };
@@ -165,19 +179,8 @@ export async function getTransactions(id: number) {
 export async function blockCard(id: number, password: string) {
     const card = await findCard(id);
     await validateExpirationDate(card);
+    await decrypt(password, card.password);
     
-    const cryptr = new Cryptr(process.env.CRYPTR_KEY);
-    const decryptedPassword = cryptr.decrypt(card.password);
-    console.log('decryptedpass', decryptedPassword)
-
-    if (decryptedPassword !== password) {
-        throw {
-            type: "unauthorized",
-            message: "incorrect data"
-        };
-        
-    } 
-
     if (card.isBlocked) {
         throw {
             type: "unauthorized",
@@ -200,18 +203,7 @@ export async function unlockCard(id: number, password: string) {
         };         
     }
 
-    const cryptr = new Cryptr(process.env.CRYPTR_KEY);
-    const decryptedPassword = cryptr.decrypt(card.password);
-    console.log('decryptedpass', decryptedPassword)
-
-    if (decryptedPassword !== password) {
-        throw {
-            type: "unauthorized",
-            message: "incorrect data"
-        };
-        
-    } 
-  
+    await decrypt(password, card.password);  
     await cardRepository.update(id, {isBlocked: false});  
     return {status: "unlocked"};
 }
