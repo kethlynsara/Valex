@@ -24,7 +24,7 @@ export async function checkCardActivation(password: string) {
 export async function decrypt(info: any, compareInfo: string) {
   const cryptr = new Cryptr(process.env.CRYPTR_KEY);
   const decryptedInfo = cryptr.decrypt(compareInfo);
-  console.log('decryptedInfo', decryptedInfo)
+  
   if (decryptedInfo != info) {
       throw {
           type: "unauthorized",

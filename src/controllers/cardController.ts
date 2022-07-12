@@ -28,7 +28,7 @@ export async function getTransactions(req: Request, res: Response) {
 export async function blockCard(req: Request, res: Response) {
     const { id } = req.params;
     const { password }: {password: string} = req.body;
-    console.log('id', id)
+
     if (!id || !password) {
         return res.sendStatus(401);
     }
@@ -40,7 +40,7 @@ export async function blockCard(req: Request, res: Response) {
 export async function unlockCard(req: Request, res: Response) {
     const { id } = req.params;
     const { password }: {password: string} = req.body;
-    console.log('id', id)
+
     if (!id || !password) {
         return res.sendStatus(401);
     }
