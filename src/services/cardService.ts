@@ -36,15 +36,19 @@ async function encrypt(string: string) {
     return encryptedString;
 }
 
-export async function createCardInfo(fullName: string) {
-    const number = faker.finance.creditCardNumber('');
+async function getCardFullName(fullName: string) {
     const array = fullName.split(" ");
-
     for (let i = 1; i < array.length - 1; i++) {
         array[i].length >= 3 ?  array[i] = array[i][0] : array.splice(i, 1);    
     }
 
     const name = array.join(" ");
+    return name;
+}
+
+export async function createCardInfo(fullName: string) {
+    const number = faker.finance.creditCardNumber('');
+    const name = await getCardFullName(fullName);
     const expirationDate = dayjs().add(5, 'year').format("MM-YYYY");
     const CVC = faker.random.numeric(3);
     const encryptedCVC = await encrypt(CVC);
