@@ -1,6 +1,6 @@
 # Valex
 - API de cartões de benefícios
-- Criação, recarga, ativação, e processamento das compras
+- Criação, recarga, ativação e processamento das compras
 
 ## Usage
 
